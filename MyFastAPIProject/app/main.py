@@ -6,12 +6,11 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from app.schemas import PostCreate,PostResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-import models.model as models
-from database import Base, engine, get_db
-from schemas import PostCreate, PostResponse,UserCreate, UserResponse
+from app.models import model as models
+from app.database import Base, engine, get_db
+from app.schemas import PostCreate, PostResponse,UserCreate, UserResponse
 
 Base.metadata.create_all(bind=engine)
 
@@ -56,8 +55,8 @@ templates = Jinja2Templates(
 @app.get("/", include_in_schema=False,name="home")
 @app.get("/posts", include_in_schema=False,name="posts")
 def home(request: Request,db: Annotated[Session, Depends(get_db)]):
-    result=db.execute(models.Post)
-    posts=result.scalar().all()
+    result=db.execute(select(models.Post))
+    posts=result.scalars().all()
     return templates.TemplateResponse(request,"home.html",
         {
             "posts": posts,
@@ -66,7 +65,7 @@ def home(request: Request,db: Annotated[Session, Depends(get_db)]):
     )
 
 ## Single Post Page
-@app.get("/posts/{post_id}", include_in_schema=False)
+@app.get("/posts/{post_id}", include_in_schema=False ,name="post_page")
 def post_page( request: Request,post_id: int,db: Annotated[Session, Depends(get_db)],):
     result = db.execute(select(models.Post).where(models.Post.id == post_id))
 
@@ -75,15 +74,44 @@ def post_page( request: Request,post_id: int,db: Annotated[Session, Depends(get_
     if post:
         title = post.title[:50]
 
+        # return templates.TemplateResponse(
+        #     "post.html",
+        #     {
+        #         "request": request,
+        #         "post": post,
+        #         "title": title,
+        #     },
+        # )
         return templates.TemplateResponse(
-            "post.html",
-            {
-                "request": request,
-                "post": post,
-                "title": title,
-            },
-        )
+    request=request,
+    name="post.html",
+    context={
+        "post": post,
+        "title": title,
+    },
+)
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="Post not found",)
+
+@app.get("/users/{user_id}/posts", include_in_schema=False, name="user_posts")
+def user_posts(request: Request,user_id: int,db: Annotated[Session, Depends(get_db)],):
+
+    result = db.execute(select(models.User).where(models.User.id == user_id))
+    user = result.scalars().first()
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User not found",)
+
+    result = db.execute(select(models.Post).where(models.Post.user_id == user_id))
+    posts = result.scalars().all()
+
+    return templates.TemplateResponse(
+    request=request,
+    name="user_posts.html",
+    context={
+        "user": user,
+        "posts": posts,
+        "title": f"{user.username}'s Posts",
+    },)
 
 ## Get all posts
 @app.get("/api/posts", response_model=list[PostResponse])
@@ -129,7 +157,6 @@ def create_post(post: PostCreate,db: Annotated[Session, Depends(get_db)],):
 
 
 ## Create User
-
 @app.post(
     "/api/users",
     response_model=PostResponse,
