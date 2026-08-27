@@ -1,0 +1,148 @@
+FastAPI Common HTTP Status Codes - Notes
+✅ 200 OK
+
+Meaning: Request was successful.
+
+Common Usage:
+
+GET → Fetch data successfully
+PUT → Update an existing resource successfully
+PATCH → Partially update a resource successfully
+
+Example:
+
+GET /posts/1
+
+
+Response:
+
+{
+  "id": 1,
+  "title": "FastAPI"
+}
+
+✅ 201 Created
+
+Meaning: New resource created successfully.
+
+Common Usage:
+
+POST requests
+
+Example:
+
+POST /posts
+
+
+Response:
+
+{
+  "id": 10,
+  "title": "New Post"
+}
+
+✅ 204 No Content
+
+Meaning: Request succeeded but no response body is returned.
+
+Common Usage:
+
+DELETE requests
+
+Example:
+
+DELETE /posts/1
+
+
+Response:
+
+204 No Content
+
+❌ 400 Bad Request
+
+Meaning: Client sent an invalid request.
+
+Common Usage:
+
+Duplicate username/email
+Invalid request format
+Business logic validation errors
+
+Example:
+
+{
+  "detail": "Email already exists"
+}
+
+❌ 404 Not Found
+
+Meaning: Requested resource does not exist.
+
+Common Usage:
+
+User not found
+Post not found
+Invalid resource ID
+
+Example:
+
+raise HTTPException(
+    status_code=404,
+    detail="Post not found"
+)
+
+
+Response:
+
+{
+  "detail": "Post not found"
+}
+
+❌ 422 Unprocessable Entity
+
+Meaning: Data validation failed.
+
+Common Usage:
+
+Missing required fields
+Wrong data types
+Pydantic validation errors
+
+Example Request:
+
+{
+  "title": 123
+}
+
+
+Schema:
+
+class PostCreate(BaseModel):
+    title: str
+
+
+Response:
+
+{
+  "detail": [
+    {
+      "msg": "Input should be a valid string"
+    }
+  ]
+}
+
+Quick Revision Table
+Status Code	Name	Usage200	OK	GET, PUT, PATCH successful
+201	Created	POST successful
+204	No Content	DELETE successful
+400	Bad Request	Invalid request/business logic error
+404	Not Found	Resource does not exist
+422	Unprocessable Entity	Pydantic validation error
+FastAPI Interview Tip
+GET → 200
+POST → 201
+PUT/PATCH → 200
+DELETE → 204
+Missing Resource → 404
+Validation Error → 422
+Bad Request/Duplicate Data → 400
