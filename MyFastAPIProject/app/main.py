@@ -261,7 +261,7 @@ async def user_posts(request: Request,user_id: int,db: Annotated[AsyncSession, D
 #     post.user_id=post_data.user_id
     
 #     await db.commit()
-#     await db.refresh(post,attribute_names="author") #each post need to load the author
+#     await db.refresh(post,attribute_names=["author"]) #each post need to load the author
 #     return post
 
 
@@ -306,7 +306,7 @@ async def user_posts(request: Request,user_id: int,db: Annotated[AsyncSession, D
 #     for key, value in update_data.items():
 #         setattr(post, key, value)    
 #     await db.commit()
-#     await db.refresh(post,attribute_names="author")
+#     await db.refresh(post,attribute_names=["author"])
 #     return post
 
 
@@ -350,7 +350,7 @@ async def user_posts(request: Request,user_id: int,db: Annotated[AsyncSession, D
 
 #     db.add(new_post)
 #     await db.commit()
-#     await db.refresh(new_post,attribute_names="author")#each post need there author loaded
+#     await db.refresh(new_post,attribute_names=["author"])#each post need there author loaded
 #     return new_post
 
 
@@ -500,6 +500,28 @@ async def user_posts(request: Request,user_id: int,db: Annotated[AsyncSession, D
 #         },
 #         status_code=exception.status_code,
 #     )
+
+
+
+@app.get("/login", include_in_schema=False)
+async def login_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        name="login.html",
+        context={
+            "title": "Login"
+        }
+    )
+ 
+
+
+@app.get("/register", include_in_schema=False)
+async def register_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        name="register.html",
+        context={"title": "Register"},
+    )
 
 ##so the better approach will be asynchrounous FastAPi default handler
 @app.exception_handler(StarletteHTTPException)

@@ -90,7 +90,8 @@ async def update_post_full(post_id: int,post_data:PostCreate,db: Annotated[Async
     post.user_id=post_data.user_id
     
     await db.commit()
-    await db.refresh(post,attribute_names="author") #each post need to load the author
+    await db.refresh(post,attribute_names=["author"])
+     #each post need to load the author
     return post
 
 
@@ -135,7 +136,7 @@ async def update_post_partial(post_id: int,post_data:PostUpdate,db: Annotated[As
     for key, value in update_data.items():
         setattr(post, key, value)    
     await db.commit()
-    await db.refresh(post,attribute_names="author")
+    await db.refresh(post,attribute_names=["author"])
     return post
 
 
@@ -179,6 +180,7 @@ async def create_post(post: PostCreate,db: Annotated[AsyncSession, Depends(get_d
 
     db.add(new_post)
     await db.commit()
-    await db.refresh(new_post,attribute_names="author")#each post need there author loaded
+    await db.refresh(new_post,attribute_names=["author"])
+    #each post need there author loaded
     return new_post
 
