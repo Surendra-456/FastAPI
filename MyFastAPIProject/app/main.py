@@ -523,6 +523,14 @@ async def register_page(request: Request):
         context={"title": "Register"},
     )
 
+@app.get("/account", include_in_schema=False)
+async def account_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        name="account.html",
+        context={"title": "Account"},
+    )
+    
 ##so the better approach will be asynchrounous FastAPi default handler
 @app.exception_handler(StarletteHTTPException)
 async def general_http_exception_handler(request: Request,exception: StarletteHTTPException):
