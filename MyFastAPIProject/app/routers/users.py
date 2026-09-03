@@ -1,13 +1,13 @@
 from pathlib import Path
 from typing import Annotated
-from fastapi import APIRouter, HTTPException,Depends, status,UploadFile
+from fastapi import APIRouter, HTTPException,Depends, status,UploadFile,Query
 from sqlalchemy import select ,func
 #from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload #for eagerloading
 from app.models import model as models
 from app.database import Base, engine, get_db
-from app.schemas import UserCreate, UserPublic,UserPrivate,UpdateUser,PostResponse,Token
+from app.schemas import UserCreate, UserPublic,UserPrivate,UpdateUser,PostResponse,Token,PaginatedPostsResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta
 from app.auth import create_access_token,hash_password,verify_password,CurrentUser
@@ -133,22 +133,75 @@ async def get_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
 #     posts = result.scalars().all()
 
 #     return posts
-@router.get("/{user_id}/posts", response_model=list[PostResponse])
-async def get_user_posts(user_id: int,db: Annotated[AsyncSession, Depends(get_db)],):
-    print("Endpoint called")
-    result = await db.execute(select(models.User).where(models.User.id == user_id))
 
+
+# #Non Paginated
+# @router.get("/{user_id}/posts", response_model=list[PostResponse])
+# async def get_user_posts(user_id: int,db: Annotated[AsyncSession, Depends(get_db)],):
+#     print("Endpoint called")
+#     result = await db.execute(select(models.User).where(models.User.id == user_id))
+
+#     user = result.scalars().first()
+#     print("User called")
+
+#     if not user:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User not found",)
+
+#     result = await db.execute(select(models.Post).options(selectinload(models.Post.author)).where(models.Post.user_id == user_id))
+#     posts = result.scalars().all()
+#     print("post called")
+
+#     return posts
+
+#paginated
+## get_user_posts - paginated
+
+@router.get("/{user_id}/posts", response_model=PaginatedPostsResponse)
+async def get_user_posts(
+    user_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    skip: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 10,
+):
+    result = await db.execute(
+        select(models.User).where(models.User.id == user_id)
+    )
     user = result.scalars().first()
-    print("User called")
 
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User not found",)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
 
-    result = await db.execute(select(models.Post).options(selectinload(models.Post.author)).where(models.Post.user_id == user_id))
+    count_result = await db.execute(
+        select(func.count())
+        .select_from(models.Post)
+        .where(models.Post.user_id == user_id),
+    )
+
+    total = count_result.scalar() or 0
+
+    result = await db.execute(
+        select(models.Post)
+        .options(selectinload(models.Post.author))
+        .where(models.Post.user_id == user_id)
+        .order_by(models.Post.date_posted.desc())
+        .offset(skip)
+        .limit(limit),
+    )
+
     posts = result.scalars().all()
-    print("post called")
 
-    return posts
+    has_more = skip + len(posts) < total
+
+    return PaginatedPostsResponse(
+        posts=[PostResponse.model_validate(post) for post in posts],
+        total=total,
+        skip=skip,
+        limit=limit,
+        has_more=has_more,
+    )
 
 
 

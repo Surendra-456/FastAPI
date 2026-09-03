@@ -43,6 +43,11 @@ class PostCreate(PostBase):
     pass
 
 
+class PostUpdate(BaseModel):
+    title: str | None = Field( default=None,min_length=1, max_length=100)
+    content: str | None = Field(default=None,min_length=1)
+
+
 class PostResponse(PostBase):
     model_config = ConfigDict(from_attributes=True)
 
@@ -51,6 +56,11 @@ class PostResponse(PostBase):
     date_posted: datetime
     author: UserPublic
 
-class PostUpdate(BaseModel):
-    title: str | None = Field( default=None,min_length=1, max_length=100)
-    content: str | None = Field(default=None,min_length=1)
+
+#New class for paginated response
+class PaginatedPostsResponse(BaseModel):
+    posts: list[PostResponse]
+    total:int
+    skip:int
+    limit:int
+    has_more:bool

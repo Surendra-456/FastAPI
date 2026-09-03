@@ -14,5 +14,7 @@ class Settings(BaseSettings):
 
     #for image
     max_upload_size_bytes:int =5 * 1024 * 1024
+    #for pagination in FE
+    posts_per_page: int=10
 #create instance 
 settings = Settings() #loaded from .env file
