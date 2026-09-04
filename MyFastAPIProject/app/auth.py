@@ -12,7 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 import app.models.model as models
 from app.database import get_db
-
+#for hashing the password
+import hashlib
+#for secret randam number generation 
+import secrets
 password_hash = PasswordHash.recommended()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/users/token")
@@ -24,6 +27,14 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return password_hash.verify(plain_password, hashed_password)
+
+#FOR EMAIL token generation
+def generate_reset_token()->str:
+     return secrets.token_urlsafe(32)
+
+#For hashing password
+def hash_reset_token(token:str)->str:
+    return hashlib.sha256(token.encode()).hexdigest()
 
 def create_access_token(
     data: dict,
